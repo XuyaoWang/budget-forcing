@@ -88,7 +88,7 @@ from transformers import AutoTokenizer
 # ref https://github.com/SkyworkAI/Skywork-R1V/blob/main/inference/inference_with_vllm.py#L10-33
 config = {
     "api_key" : "EMPTY",
-    "api_base" :"http://dgx-106:8000/v1/chat/completions",
+    "api_base" :"http://localhost:8000/v1/chat/completions",
     "model" :"Skywork-R1V-38B",
     'temperature': 0.,
     'top_p': 0.95,
@@ -97,7 +97,7 @@ config = {
     'num_ignore': 7
 }
 print(config)
-tokenizer = AutoTokenizer.from_pretrained("Skywork/Skywork-R1V-38B", trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained("/ceph/home/yaodong01/s1-m/Models/Skywork-R1V-38B", trust_remote_code=True)
 results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "/home/hansirui_2nd/pcwen_workspace/s1m_assemble/cache/r1v_mathv")
 try:
     generated_chunks = {}
@@ -124,7 +124,7 @@ try:
             generated_chunks[wait].append(result_sample)
             
     for wait in generated_chunks.keys():
-        config_output_path = f"/home/hansirui_2nd/pcwen_workspace/s1m_assemble/result/R1V-mathv-30168-{wait}wait.json"
+        config_output_path = f"result/R1V-mathv-30168-{wait}wait.json"
         output_filename = config_output_path
         write_json(output_filename, generated_chunks[wait])
 except:
