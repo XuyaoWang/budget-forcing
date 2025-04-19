@@ -1,0 +1,44 @@
+[
+    {
+        "model_name": "QVQ-Mathv",
+        "wait": 0,
+        "accuracy": 0.2888157894736842,
+        "avg_token_length": 6751.328947368421
+    },
+    {
+        "model_name": "QVQ-Mathv",
+        "wait": 1,
+        "accuracy": 0.28519736842105264,
+        "avg_token_length": 7211.8125
+    },
+    {
+        "model_name": "QVQ-Mathv",
+        "wait": 2,
+        "accuracy": 0.2888157894736842,
+        "avg_token_length": 7527.812171052631
+    },
+    {
+        "model_name": "QVQ-Mathv",
+        "wait": 3,
+        "accuracy": 0.2855263157894737,
+        "avg_token_length": 7863.983881578947
+    },
+    {
+        "model_name": "QVQ-Mathv",
+        "wait": 4,
+        "accuracy": 0.2911184210526316,
+        "avg_token_length": 8226.611842105263
+    },
+    {
+        "model_name": "QVQ-Mathv",
+        "wait": 5,
+        "accuracy": 0.2891447368421053,
+        "avg_token_length": 8658.99769736842
+    },
+    {
+        "model_name": "QVQ-Mathv",
+        "wait": 6,
+        "accuracy": 0.29375,
+        "avg_token_length": 9387.125986842106
+    }
+]

@@ -197,10 +197,10 @@ subset_list = [
     "OE_TO_physics_zh_CEE"
 ]
 from tqdm import trange
-from budget_forcing import call_budget_forcing
+
 
 from transformers import AutoTokenizer
-
+big_collect = []
 for subset in subset_list:
     print(f"Processing subset: {subset}")
     ds = load_dataset("Hothan/OlympiadBench", subset)
@@ -222,7 +222,7 @@ for subset in subset_list:
                 prefix_prompt = prefix_prompt + '\n' + sample['question']
         messages = make_input(prefix_prompt,sample, is_chinese, is_math)
         # for skywork R1V
-        messages.append({'role': 'assistant', 'content': "<think>\n"})
+        # messages.append({'role': 'assistant', 'content': "<think>\n"})
         input_list.append(messages)
         final_answers.append(sample["final_answer"])
         related_sample = copy.deepcopy(sample)
@@ -240,49 +240,13 @@ for subset in subset_list:
 #############################################
 
 
-    # ref https://github.com/SkyworkAI/Skywork-R1V/blob/main/inference/inference_with_vllm.py#L10-33
-    config = {
-        "api_key" : "EMPTY",
-        "api_base" :"http://dgx-106:8000/v1/chat/completions",
-        "model" :"Skywork-R1V-38B",
-        'temperature': 0.,
-        'top_p': 0.95,
-        'max_tokens_thinking': 30168,
-        'repetition_penalty' : 1.05,
-        'num_ignore': 7
-    }
-    tokenizer = AutoTokenizer.from_pretrained("Skywork/Skywork-R1V-38B", trust_remote_code=True)
-    if not is_chinese:
-        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1v_oly")
-    else:
-        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\n等等",num_workers=50,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1v_oly")
-    try:
-        generated_chunks = {}
-        for res,related_info in tqdm(zip(results,related_list)):     
-            for wait in res["output"].keys():
-                ta = res["output"][wait]
-                try:
-                    thinking = ta.split("\n</think>\n\n")[0]
-                    answer = ta.split("\n</think>\n\n")[1]
-                except:
-                    answer = ta
-                    thinking = ""
-                    # raise ValueError("Error in splitting thinking and answer")
-                try:
-                    generated_chunks[wait]
-                except:
-                    generated_chunks[wait] = []
-                result_sample = copy.deepcopy(related_info)
-                result_sample.update({
-                    "my_model_thinking": thinking,
-                    "my_model_output": answer,
-                    "generator": "R1V"
-                    })
-                generated_chunks[wait].append(result_sample)
-                
-        for wait in generated_chunks.keys():
-            config_output_path = f"/aifs4su/hansirui/pcwen_workspace/s1m/result/R1V-30168_{subset}-{wait}wait.json"
-            output_filename = config_output_path
-            write_json(output_filename, generated_chunks[wait])
-    except:
-        continue
+    for input, related in zip(input_list,related_list):
+        sample = copy.deepcopy(related)
+        sample["input"] = input
+        sample["is_chinese"] = is_chinese
+        sample["subset"] = subset
+        
+        big_collect.append(sample)
+output_filename = "offline/files/oly_0.json"
+write_json(output_filename, big_collect)
+

@@ -243,27 +243,27 @@ for subset in subset_list:
     # ref https://github.com/SkyworkAI/Skywork-R1V/blob/main/inference/inference_with_vllm.py#L10-33
     config = {
         "api_key" : "EMPTY",
-        "api_base" :"http://dgx-106:8000/v1/chat/completions",
-        "model" :"Skywork-R1V-38B",
+        "api_base" :"http://dgx-040:9000/v1/chat/completions",
+        "model" :"r1-ov-7b",
         'temperature': 0.,
         'top_p': 0.95,
         'max_tokens_thinking': 30168,
         'repetition_penalty' : 1.05,
         'num_ignore': 7
     }
-    tokenizer = AutoTokenizer.from_pretrained("Skywork/Skywork-R1V-38B", trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained("Fancy-MLLM/R1-Onevision-7B-RL", trust_remote_code=True)
     if not is_chinese:
-        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1v_oly")
+        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n",ignore_str="\n\nWait",num_workers=200,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1-ov-7b")
     else:
-        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\n等等",num_workers=50,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1v_oly")
+        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n",ignore_str="\n\n等等",num_workers=200,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1-ov-7b")
     try:
         generated_chunks = {}
         for res,related_info in tqdm(zip(results,related_list)):     
             for wait in res["output"].keys():
                 ta = res["output"][wait]
                 try:
-                    thinking = ta.split("\n</think>\n\n")[0]
-                    answer = ta.split("\n</think>\n\n")[1]
+                    thinking = ta.split("</think>")[0]
+                    answer = ta.split("</think>")[1]
                 except:
                     answer = ta
                     thinking = ""
@@ -276,12 +276,12 @@ for subset in subset_list:
                 result_sample.update({
                     "my_model_thinking": thinking,
                     "my_model_output": answer,
-                    "generator": "R1V"
+                    "generator": "r1-ov-7b"
                     })
                 generated_chunks[wait].append(result_sample)
                 
         for wait in generated_chunks.keys():
-            config_output_path = f"/aifs4su/hansirui/pcwen_workspace/s1m/result/R1V-30168_{subset}-{wait}wait.json"
+            config_output_path = f"/aifs4su/hansirui/pcwen_workspace/s1m/result/r1-ov-7b-30168_{subset}-{wait}wait.json"
             output_filename = config_output_path
             write_json(output_filename, generated_chunks[wait])
     except:

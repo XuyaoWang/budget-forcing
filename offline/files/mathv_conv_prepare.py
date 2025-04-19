@@ -73,8 +73,6 @@ related_list = []
 print("preparing input")
 for sample in tqdm(dataset['test']):
     messages = gen_messages(sample)
-    # for skywork R1V
-    messages.append({'role': 'assistant', 'content': "<think>\n"})
     input_list.append(messages)
     related_sample = copy.deepcopy(sample)
     # dont need image
@@ -83,49 +81,12 @@ for sample in tqdm(dataset['test']):
 #############################################
 # send to next stage and call 
 #############################################
-from budget_forcing import call_budget_forcing
-from transformers import AutoTokenizer
-# ref https://github.com/SkyworkAI/Skywork-R1V/blob/main/inference/inference_with_vllm.py#L10-33
-config = {
-    "api_key" : "EMPTY",
-    "api_base" :"http://dgx-106:8000/v1/chat/completions",
-    "model" :"Skywork-R1V-38B",
-    'temperature': 0.,
-    'top_p': 0.95,
-    'max_tokens_thinking': 30168,
-    'repetition_penalty' : 1.05,
-    'num_ignore': 7
-}
-print(config)
-tokenizer = AutoTokenizer.from_pretrained("Skywork/Skywork-R1V-38B", trust_remote_code=True)
-results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "/home/hansirui_2nd/pcwen_workspace/s1m_assemble/cache/r1v_mathv")
-try:
-    generated_chunks = {}
-    for res,related_info in tqdm(zip(results,related_list)):
-        for wait in res["output"].keys():
-            ta = res["output"][wait]
-            try:
-                thinking = ta.split("\n</think>\n\n")[0]
-                answer = ta.split("\n</think>\n\n")[1]
-            except:
-                answer = ta
-                thinking = ""
-                # raise ValueError("Error in splitting thinking and answer")
-            try:
-                generated_chunks[wait]
-            except:
-                generated_chunks[wait] = []
-            result_sample = copy.deepcopy(related_info)
-            result_sample.update({
-                "my_model_thinking": thinking,
-                "my_model_output": answer,
-                "generator": "R1V"
-                })
-            generated_chunks[wait].append(result_sample)
-            
-    for wait in generated_chunks.keys():
-        config_output_path = f"/home/hansirui_2nd/pcwen_workspace/s1m_assemble/result/R1V-mathv-30168-{wait}wait.json"
-        output_filename = config_output_path
-        write_json(output_filename, generated_chunks[wait])
-except:
-    pass
+big_collect = []
+for input, related in zip(input_list,related_list):
+    sample = copy.deepcopy(related)
+    sample["input"] = input
+
+    big_collect.append(sample)
+    
+output_filename = "offline/files/mathv_0.json"
+write_json(output_filename, big_collect)

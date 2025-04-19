@@ -190,6 +190,7 @@ def write_json(file, data):
         print("Error writing JSON:", e)
 
 
+
 subset_list = [
     "OE_MM_maths_en_COMP", "OE_MM_maths_zh_CEE", "OE_MM_maths_zh_COMP",
     "OE_MM_physics_en_COMP", "OE_MM_physics_zh_CEE", "OE_TO_maths_en_COMP",
@@ -221,8 +222,6 @@ for subset in subset_list:
             else:
                 prefix_prompt = prefix_prompt + '\n' + sample['question']
         messages = make_input(prefix_prompt,sample, is_chinese, is_math)
-        # for skywork R1V
-        messages.append({'role': 'assistant', 'content': "<think>\n"})
         input_list.append(messages)
         final_answers.append(sample["final_answer"])
         related_sample = copy.deepcopy(sample)
@@ -243,30 +242,34 @@ for subset in subset_list:
     # ref https://github.com/SkyworkAI/Skywork-R1V/blob/main/inference/inference_with_vllm.py#L10-33
     config = {
         "api_key" : "EMPTY",
-        "api_base" :"http://dgx-106:8000/v1/chat/completions",
-        "model" :"Skywork-R1V-38B",
+        "api_base" :"http://dgx-050:9000/v1/chat/completions",
+        "model" :"QVQ-72B-Preview",
         'temperature': 0.,
         'top_p': 0.95,
         'max_tokens_thinking': 30168,
         'repetition_penalty' : 1.05,
         'num_ignore': 7
     }
-    tokenizer = AutoTokenizer.from_pretrained("Skywork/Skywork-R1V-38B", trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/QVQ-72B-Preview", trust_remote_code=True)
     if not is_chinese:
-        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1v_oly")
+        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n\n**Final Answer**\n\n",ignore_str="\n\nWait",num_workers=100,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/qvq_oly")
     else:
-        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\n等等",num_workers=50,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/r1v_oly")
+        results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n\n**答案**\n\n",ignore_str="\n\n等等",num_workers=100,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/qvq_oly")
     try:
-        generated_chunks = {}
+        generated_chunks = []
         for res,related_info in tqdm(zip(results,related_list)):     
             for wait in res["output"].keys():
                 ta = res["output"][wait]
                 try:
-                    thinking = ta.split("\n</think>\n\n")[0]
-                    answer = ta.split("\n</think>\n\n")[1]
+                    thinking = ta.split("\n\n**Final Answer**\n\n")[0]
+                    answer = ta.split("\n\n**Final Answer**\n\n")[1]
                 except:
-                    answer = ta
-                    thinking = ""
+                    try:
+                        thinking = ta.split("\n\n**答案**\n\n")[0]
+                        answer = ta.split("\n\n**答案**\n\n")[1]
+                    except:
+                        answer = ta
+                        thinking = ""
                     # raise ValueError("Error in splitting thinking and answer")
                 try:
                     generated_chunks[wait]
@@ -276,13 +279,14 @@ for subset in subset_list:
                 result_sample.update({
                     "my_model_thinking": thinking,
                     "my_model_output": answer,
-                    "generator": "R1V"
+                    "generator": "QvQ"
                     })
                 generated_chunks[wait].append(result_sample)
                 
         for wait in generated_chunks.keys():
-            config_output_path = f"/aifs4su/hansirui/pcwen_workspace/s1m/result/R1V-30168_{subset}-{wait}wait.json"
+            config_output_path = f"/aifs4su/hansirui/pcwen_workspace/s1m/result/QvQ-30168_{subset}-{wait}wait.json"
             output_filename = config_output_path
             write_json(output_filename, generated_chunks[wait])
     except:
         continue
+    # (vllm-server) hansirui_2nd@dgx-106:~/pcwen_workspace/s1m/OlympiadBench/my_scripts_totests1m$ python input_prepared_120.py 

@@ -27,10 +27,15 @@ from util_oly_math_judger import MathJudger
 judger = MathJudger()
 
 from tqdm import tqdm
+tokenizer = AutoTokenizer.from_pretrained("Qwen/QVQ-72B-Preview", trust_remote_code=True)
+def count(text):
+    tokens = tokenizer.encode(text)
+    return len(tokens)
 
 
 win_count = 0
 all_count = 0
+token_count = 0
 for subset in subset_list:
     file  = f"/aifs4su/hansirui/pcwen_workspace/t/new_Oly/qvq-stts/result/QVQ-30168_{subset}-{sys.argv[1]}wait.json"
     with open(file, 'r', encoding='utf-8') as f:
@@ -81,3 +86,30 @@ for subset in subset_list:
 
 
 print(win_count/all_count)
+
+
+
+
+
+for i in range(7):
+    tokencout= 0
+    all_count = 0
+    for subset in subset_list:
+        file  = f"/aifs4su/hansirui/pcwen_workspace/t/new_Oly/qvq-stts/result/QVQ-30168_{subset}-{i}wait.json"
+        with open(file, 'r', encoding='utf-8') as f:
+            all_results = json.load(f)
+
+
+        
+        for result in tqdm(all_results):
+            all_count+=1
+            input_query = result['instruction']
+            response = result['output']
+            model_answer = response
+            c = count(result['thinking']+result['output'])
+            tokencout+=c
+
+
+    print(i)
+    print("wait")
+    print(tokencout/all_count)
