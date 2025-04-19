@@ -7,6 +7,9 @@
 #SBATCH --gres=gpu:8                   # 每个节点使用的 GPU 数量
 #SBATCH --cpus-per-task=220
 #SBATCH --mem=500GB
+#SBATCH --qos=12gpu-hgx 
+
+
 
 
 python -m vllm.entrypoints.openai.api_server --model Skywork/Skywork-R1V-38B \
