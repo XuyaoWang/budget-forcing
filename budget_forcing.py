@@ -209,7 +209,8 @@ def call_budget_forcing(
     # assert model != "", "Please provide model name"
 
     api_interaction_count = 0
-    ray.init(_temp_dir="/home/hansirui_2nd/ray_temp")
+    ray.init()
+    # ray.init(_temp_dir="/home/hansirui_2nd/ray_temp")
     
     model = config['model']
     api_key = config['api_key']
