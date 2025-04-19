@@ -36,7 +36,7 @@ sleep 300  # 20分钟 = 1200秒
 # 执行Python脚本
 echo "开始执行run_mathv_R1V.py..."
 cd /ceph/home/yaodong01/s1-m/pcwen/budget-forcing/  # 假设脚本在这个目录，根据实际情况修改
-python run_Oly_R1ov7b.py
+HF_ENDPOINT=https://hf-mirror.com  python run_Oly_R1ov7b.py
 
 # 检查Python脚本的退出状态
 if [ $? -eq 0 ]; then
