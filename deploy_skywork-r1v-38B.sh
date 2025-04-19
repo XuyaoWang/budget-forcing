@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=220
 #SBATCH --mem=500GB
 #SBATCH --qos=12gpu-hgx 
-
+#SBATCH --time 1:00:00
 
 
 
