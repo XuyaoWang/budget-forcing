@@ -4,7 +4,7 @@
 #SBATCH --error=/ceph/home/yaodong01/s1-m/pcwen/budget-forcing/deploy_%j.log    # 输出日志文件
 #SBATCH --partition=IAI_SLURM_HGX                # 分区
 #SBATCH --nodes=1                      # 节点数
-#SBATCH --gres=gpu:8                   # 每个节点使用的 GPU 数量
+#SBATCH --gres=gpu:4                   # 每个节点使用的 GPU 数量
 #SBATCH --cpus-per-task=220
 #SBATCH --mem=500GB
 #SBATCH --qos=12gpu-hgx 
@@ -14,7 +14,7 @@
 
 python -m vllm.entrypoints.openai.api_server --model Skywork/Skywork-R1V-38B \
                                                     --port 8000 \
-                                                    --tensor-parallel-size 8 \
+                                                    --tensor-parallel-size 4 \
                                                     --gpu-memory-utilization 0.8 \
                                                     --served-model-name Skywork-R1V-38B \
                                                     --trust-remote-code \
