@@ -98,7 +98,7 @@ config = {
 }
 print(config)
 tokenizer = AutoTokenizer.from_pretrained("/ceph/home/yaodong01/s1-m/Models/Skywork-R1V-38B", trust_remote_code=True)
-results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "/home/hansirui_2nd/pcwen_workspace/s1m_assemble/cache/r1v_mathv")
+results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "./cache_r1v_mathv")
 try:
     generated_chunks = {}
     for res,related_info in tqdm(zip(results,related_list)):
