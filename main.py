@@ -30,12 +30,16 @@ def parse_args():
                        help="Host address to bind to")
     parser.add_argument("--tensor-parallel-size", type=int, default=1,
                        help="Number of GPUs to use for tensor parallelism")
+    parser.add_argument("--pipeline-parallel-size", type=int, default=1,
+                       help="Number of GPUs to use for pipeline parallelism")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.7,
                        help="Fraction of GPU memory to use")
     parser.add_argument("--limit-mm-per-prompt", type=str, default="image=10,video=10",
                        help="Limit on multimedia per prompt")
     parser.add_argument("--chat-template", type=str, default=None,
                        help="Path to chat template file")
+    parser.add_argument("--max-seq-len", type=int, default=32768,
+                       help="Maximum sequence length for the model")
     parser.add_argument("--enable-prefix-caching", action="store_true",
                        help="Whether to enable prefix caching")
     parser.add_argument("--dtype", type=str, default="bfloat16",
@@ -123,8 +127,10 @@ async def main():
             port=args.port,
             host=args.host,
             tensor_parallel_size=args.tensor_parallel_size,
+            pipeline_parallel_size=args.pipeline_parallel_size,
             gpu_memory_utilization=args.gpu_memory_utilization,
             limit_mm_per_prompt=args.limit_mm_per_prompt,
+            max_seq_len=args.max_seq_len,
             chat_template=args.chat_template,
             enable_prefix_caching=args.enable_prefix_caching,
             dtype=args.dtype,
