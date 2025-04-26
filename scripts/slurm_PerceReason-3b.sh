@@ -10,5 +10,6 @@
 #SBATCH --qos=12gpu-hgx 
 #SBATCH --time=3:00:00
 
-
+# export HF_ENDPOINT=https://hf-mirror.com
+# huggingface-cli download --resume-download VLM-Reasoner/LMM-R1-MGT-PerceReason --local-dir ~/s1-m/Models/LMM-R1-MGT-PerceReason
 srun  scripts/run_PerceReason-3b.sh

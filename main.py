@@ -149,7 +149,7 @@ async def main():
             api_key=args.api_key,
             model=model_name,
             tokenizer_path=args.tokenizer_path or args.model_path,
-            cache_dir=f"{args.cache_dir}/{str(model_name).replace('/', '_')}",,
+            cache_dir=f"{args.cache_dir}/{str(model_name).replace('/', '_')}",
             num_workers=args.num_workers,
             reasoning=args.reasoning,
             bot=args.bot,
