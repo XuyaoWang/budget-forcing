@@ -11,4 +11,4 @@
 #SBATCH --time=3:00:00
 
 
-srun  run_PerceReason-3b.sh
+srun  scripts/run_PerceReason-3b.sh
