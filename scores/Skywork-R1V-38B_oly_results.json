@@ -1,0 +1,44 @@
+[
+    {
+        "model_name": "Skywork-R1V-38B",
+        "wait": 0,
+        "accuracy": 0.002526753864447087,
+        "avg_token_length": 9104.134809750298
+    },
+    {
+        "model_name": "Skywork-R1V-38B",
+        "wait": 1,
+        "accuracy": 0.0017835909631391202,
+        "avg_token_length": 10361.968489892985
+    },
+    {
+        "model_name": "Skywork-R1V-38B",
+        "wait": 2,
+        "accuracy": 0.00044589774078478004,
+        "avg_token_length": 12053.911860879905
+    },
+    {
+        "model_name": "Skywork-R1V-38B",
+        "wait": 3,
+        "accuracy": 0.00044589774078478004,
+        "avg_token_length": 14326.52244351962
+    },
+    {
+        "model_name": "Skywork-R1V-38B",
+        "wait": 4,
+        "accuracy": 0.00044589774078478004,
+        "avg_token_length": 16272.724435196194
+    },
+    {
+        "model_name": "Skywork-R1V-38B",
+        "wait": 5,
+        "accuracy": 0.00044589774078478004,
+        "avg_token_length": 17969.92657550535
+    },
+    {
+        "model_name": "Skywork-R1V-38B",
+        "wait": 6,
+        "accuracy": 0.00044589774078478004,
+        "avg_token_length": 19409.399821640905
+    }
+]

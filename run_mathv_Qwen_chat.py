@@ -74,7 +74,7 @@ print("preparing input")
 for sample in tqdm(dataset['test']):
     messages = gen_messages(sample)
     # for skywork R1V
-    messages.append({'role': 'assistant', 'content': "<think>\n"})
+    messages.append({'role': 'assistant', 'content': ""})
     input_list.append(messages)
     related_sample = copy.deepcopy(sample)
     # dont need image
@@ -83,30 +83,38 @@ for sample in tqdm(dataset['test']):
 #############################################
 # send to next stage and call 
 #############################################
-from budget_forcing import call_budget_forcing
+from budget_forcing_chat import call_budget_forcing
 from transformers import AutoTokenizer
 # ref https://github.com/SkyworkAI/Skywork-R1V/blob/main/inference/inference_with_vllm.py#L10-33
 config = {
     "api_key" : "EMPTY",
     "api_base" :"http://localhost:8000/v1/chat/completions",
-    "model" :"Skywork-R1V-38B",
+    "model" :"Qwen2.5-VL-72B-Instruct",
     'temperature': 0.,
-    'top_p': 0.95,
+    'top_p': 0.1,
     'max_tokens_thinking': 30168,
     'repetition_penalty' : 1.05,
     'num_ignore': 7
 }
 print(config)
-tokenizer = AutoTokenizer.from_pretrained("Skywork/Skywork-R1V-38B", trust_remote_code=True)
-results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="\n</think>\n\n",ignore_str="\n\nWait",num_workers=50,cache_dir = "/home/hansirui_2nd/pcwen_workspace/s1m_assemble/cache/r1v_mathv")
+tokenizer = AutoTokenizer.from_pretrained("Qwen/QVQ-72B-Preview", trust_remote_code=True)
+results = call_budget_forcing(config,tokenizer,input_list,related_list,stop_think_token="So the final answer is",ignore_str="Wait",num_workers=100,cache_dir = "/aifs4su/hansirui/pcwen_workspace/s1m/cache/Qwen-72_mathv")
 try:
     generated_chunks = {}
     for res,related_info in tqdm(zip(results,related_list)):
         for wait in res["output"].keys():
             ta = res["output"][wait]
             try:
-                thinking = ta.split("\n</think>\n\n")[0]
-                answer = ta.split("\n</think>\n\n")[1]
+                split_word = "So the final answer is"
+                parts = ta.rsplit(split_word, 1)
+                if len(parts) == 2:
+                    # 如果成功分割为两部分
+                    thinking = parts[0]
+                    answer = split_word + parts[1]  # 保留"So the final answer is"作为answer的一部分
+                else:
+                    # 如果没有找到"So the final answer is"
+                    thinking = ""
+                    answer = ta
             except:
                 answer = ta
                 thinking = ""
@@ -119,12 +127,12 @@ try:
             result_sample.update({
                 "my_model_thinking": thinking,
                 "my_model_output": answer,
-                "generator": "R1V"
+                "generator": "qwen-72"
                 })
             generated_chunks[wait].append(result_sample)
             
     for wait in generated_chunks.keys():
-        config_output_path = f"result/R1V-mathv-30168-{wait}wait.json"
+        config_output_path = f"/aifs4su/hansirui/pcwen_workspace/s1m/result/Qwen-72-30168_mathv{wait}wait.json"
         output_filename = config_output_path
         write_json(output_filename, generated_chunks[wait])
 except:

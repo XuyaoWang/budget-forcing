@@ -22,7 +22,7 @@ python -m vllm.entrypoints.openai.api_server --model /ceph/home/yaodong01/s1-m/M
                                                   --max_num_batched_tokens 131072 \
                                                   --max_num_seqs 2048 \
                                                   --scheduler-delay-factor 12 \
-                                                  --limit-mm-per-prompt "image=1" \
+                                                  --limit-mm-per-prompt "image=5" \
                                                   --chat-template /ceph/home/yaodong01/s1-m/pcwen/budget-forcing/tempalte_skyt1_stts.jinja > vllm_server.log 2>&1 &
 
 # 保存服务器进程ID

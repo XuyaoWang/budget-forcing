@@ -1,0 +1,44 @@
+[
+    {
+        "model_name": "r1-ov-7b",
+        "wait": 0,
+        "accuracy": 0.00312128418549346,
+        "avg_token_length": 1829.6542806183115
+    },
+    {
+        "model_name": "r1-ov-7b",
+        "wait": 1,
+        "accuracy": 0.0014863258026159335,
+        "avg_token_length": 2555.5756539833533
+    },
+    {
+        "model_name": "r1-ov-7b",
+        "wait": 2,
+        "accuracy": 0.002972651605231867,
+        "avg_token_length": 3150.1542806183115
+    },
+    {
+        "model_name": "r1-ov-7b",
+        "wait": 3,
+        "accuracy": 0.0023781212841854932,
+        "avg_token_length": 3913.072532699168
+    },
+    {
+        "model_name": "r1-ov-7b",
+        "wait": 4,
+        "accuracy": 0.0034185493460166467,
+        "avg_token_length": 6820.813912009513
+    },
+    {
+        "model_name": "r1-ov-7b",
+        "wait": 5,
+        "accuracy": 0.004161712247324614,
+        "avg_token_length": 14690.965071343639
+    },
+    {
+        "model_name": "r1-ov-7b",
+        "wait": 6,
+        "accuracy": 0.0038644470868014267,
+        "avg_token_length": 18160.74420332937
+    }
+]
