@@ -63,6 +63,7 @@ python main.py \
   --num-workers ${NUM_WORKERS} \
   --num-ignore ${NUM_IGNORE} \
   --max-tokens-thinking ${MAX_TOKENS_THINKING} \
+  --server-init-timeout 1800 \
   ${ENABLE_PREFIX_CACHING:+--enable-prefix-caching} \
   ${DISABLE_LOG_STATS:+--disable-log-stats} \
   ${DISABLE_LOG_REQUESTS:+--disable-log-requests} \
