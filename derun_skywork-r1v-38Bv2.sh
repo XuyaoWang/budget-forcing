@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=skywork-R1v2         # 任务名称
+#SBATCH --job-name=skyr1v2         # 任务名称
 #SBATCH --output=/ceph/home/yaodong01/s1-m/pcwen/budget-forcing/derun_%j.log    # 输出日志文件
 #SBATCH --error=/ceph/home/yaodong01/s1-m/pcwen/budget-forcing/derun_%j.log    # 输出日志文件
 #SBATCH --partition=IAI_SLURM_HGX                # 分区
