@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=skyr1v2         # 任务名称
-#SBATCH --output=/ceph/home/yaodong01/s1-m/pcwen/budget-forcing/derun_%j.log    # 输出日志文件
-#SBATCH --error=/ceph/home/yaodong01/s1-m/pcwen/budget-forcing/derun_%j.log    # 输出日志文件
+#SBATCH --output=/ceph/home/yaodong01/s1-m/pcwen/s1m/derun_%j.log    # 输出日志文件
+#SBATCH --error=/ceph/home/yaodong01/s1-m/pcwen/s1m/derun_%j.log    # 输出日志文件
 #SBATCH --partition=IAI_SLURM_HGX                # 分区
 #SBATCH --nodes=1                      # 节点数
 #SBATCH --gres=gpu:8                   # 每个节点使用的 GPU 数量
@@ -32,7 +32,7 @@ srun --nodelist=${HEAD_NODE} --ntasks=1 bash -c '
          --max_num_seqs 2048 \
          --scheduler-delay-factor 12 \
          --limit-mm-per-prompt "image=5" \
-         --chat-template /ceph/home/yaodong01/s1-m/pcwen/budget-forcing/tempalte_skyt1_stts.jinja \
+         --chat-template /ceph/home/yaodong01/s1-m/pcwen/s1m/tempalte_skyt1_stts.jinja \
          > vllm_server.log 2>&1 &
     echo $! > vllm_server.pid
     # 使用 wait 命令保持该 shell 进程，直到外部 kill 结束
@@ -46,7 +46,7 @@ sleep 300
 # 第二步：在 head 节点上执行 run_mathv_R1V.py
 echo "在 Head 节点上执行 run_mathv_R1V2.py..."
 srun --nodelist=${HEAD_NODE} --ntasks=1 bash -c '
-    cd /ceph/home/yaodong01/s1-m/pcwen/budget-forcing/ &&
+    cd /ceph/home/yaodong01/s1-m/pcwen/s1m/ &&
     HF_ENDPOINT=https://hf-mirror.com python run_mathv_R1V2.py
 '
 RUN_STATUS=$?
