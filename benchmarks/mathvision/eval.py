@@ -37,7 +37,7 @@ class MathVisionEvaluator(BenchmarkEvaluator):
         Returns:
             The loaded dataset
         """
-        dataset = load_dataset(self.data_path)[split]
+        dataset = load_dataset(self.data_path)['test']
         return dataset
     
     def prepare_input_item(self, item: Dict[str, Any]) -> Tuple[str, str, Any]:
@@ -84,6 +84,7 @@ class MathVisionEvaluator(BenchmarkEvaluator):
         # Get the prediction from the response
         filtered_response = response.split("</think>")[1] if "</think>" in response else response
         filtered_response = filtered_response.split("Final answer:")[1] if "Final answer:" in filtered_response else filtered_response
+        filtered_response = filtered_response.strip()
         
         # Extract the answer from the response
         gt_answer = str(item['answer'])

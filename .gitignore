@@ -57,6 +57,7 @@ venv.bak/
 
 # Project specific
 cache/
+cache_test/
 results/
 local_scripts/
 .DS_Store

@@ -3,9 +3,6 @@ import logging
 from typing import Any, List, Union, Dict, Optional
 
 import copy
-import base64
-from PIL import Image
-from io import BytesIO
 from transformers import AutoTokenizer
 from utils.parallel_processing import parallel_processing_backend
 from utils.cached_requests import cached_requests
@@ -28,6 +25,7 @@ class BudgetForcingClient:
                  reasoning: bool = False,
                  bot: str = "<think>",
                  eot: str = "</think>",
+                 ignore_str: str = "Wait",
                  cache_dir: str = "./cache",
                  num_workers: int = 100):
         """
@@ -41,6 +39,7 @@ class BudgetForcingClient:
             reasoning: Whether the model contains both bot and eot tokens
             bot: Beginning of thinking token
             eot: End of thinking token
+            ignore_str: String to use when ignoring the stop token
             cache_dir: Directory to cache results
             num_workers: Maximum number of parallel workers
         """
@@ -49,6 +48,7 @@ class BudgetForcingClient:
         self.reasoning = reasoning
         self.bot = bot
         self.eot = eot
+        self.ignore_str = ignore_str
         self.api_key = api_key
         self.cache_dir = cache_dir
         self.num_workers = num_workers
@@ -58,31 +58,6 @@ class BudgetForcingClient:
             tokenizer_path = model
         
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
-    
-    @staticmethod
-    def encode_image(image: Union[str, Image.Image]) -> str:
-        """
-        Encode an image as a base64 data URL.
-        
-        Args:
-            image: Path to an image or a PIL Image object
-            
-        Returns:
-            Base64 encoded image as a data URL
-        """
-        if isinstance(image, str):
-            image_input = Image.open(image)
-        else:
-            image_input = image
-        
-        if image_input.mode != "RGB":
-            image_input = image_input.convert("RGB")
-
-        buffer = BytesIO()
-        image_input.save(buffer, format="JPEG")
-        img_bytes = buffer.getvalue()
-        base64_data = base64.b64encode(img_bytes).decode("utf-8")
-        return f"data:image/jpeg;base64,{base64_data}"
     
     def _budget_forcing(self, param: Dict[str, Any]) -> Any:
         """
@@ -94,24 +69,13 @@ class BudgetForcingClient:
         Returns:
             Dictionary mapping ignore index to full response
         """
-        system_content = param["system_content"]
-        user_content = param["user_content"]
-        image = param["image"]
+        messages = param["messages"]
         max_tokens_thinking = param["max_tokens_thinking"]
         num_ignore = param["num_ignore"]
         temperature = param["temperature"]
         top_p = param["top_p"]
         repetition_penalty = param["repetition_penalty"]
         
-        images = [image] if isinstance(image, str) else image
-        
-        content = [{"type": "image_url", "image_url": {"url": img}} for img in images]
-        content.append({"type": "text", "text": user_content})
-
-        messages = [{'role': 'user', 'content': content}]
-        if system_content:
-            messages.insert(0, {'role': 'system', 'content': system_content})
-
         if self.reasoning:
             messages.append({'role': 'assistant', 'content': f'{self.bot}\n'})
         else:
@@ -119,7 +83,6 @@ class BudgetForcingClient:
         
         end_think_token = self.eot
         begin_think_token = self.bot
-        ignore_str = "Wait"
         
         current_tokens_thinking = max_tokens_thinking
         response = cached_requests(
@@ -190,7 +153,7 @@ class BudgetForcingClient:
                     # Remove the last begin_think_token to avoid duplication
                     messages[-1]['content'] = messages[-1]['content'].rstrip(begin_think_token)
             
-            messages[-1]['content'] = messages[-1]['content'] + ignore_str
+            messages[-1]['content'] = messages[-1]['content'] + self.ignore_str
             
             # Continue thinking
             response = cached_requests(
@@ -219,28 +182,8 @@ class BudgetForcingClient:
         
         return num_ignore2response
 
-    def prepare_images(self, images):
-        """
-        Prepare images for the budget forcing API.
-        
-        Args:
-            images: List of image paths, URLs, or PIL Images
-            
-        Returns:
-            List of encoded images
-        """
-        if images is None:
-            return None
-            
-        if isinstance(images[0], list):
-            return [[self.encode_image(image) for image in image_list] for image_list in images]
-        else:
-            return [self.encode_image(image) for image in images]
-
     def run(self,
-            system_contents: List[str],
-            user_contents: List[str],
-            images: Optional[List[Union[str, List[str], Image.Image, List[Image.Image]]]] = None,
+            messages_list: List[List[Dict[str, Any]]],
             max_tokens_thinking: int = 32000,
             num_ignore: int = 1,
             temperature: float = 0.3,
@@ -248,12 +191,10 @@ class BudgetForcingClient:
             repetition_penalty: float = 1.05,
             num_workers: Optional[int] = None) -> List[Dict[str, str]]:
         """
-        Run budget forcing on multiple inputs in parallel.
+        Run budget forcing on multiple inputs with prepared messages in parallel.
         
         Args:
-            system_contents: List of system prompts
-            user_contents: List of user prompts
-            images: List of images (paths, URLs, or PIL Images)
+            messages_list: List of prepared message lists
             max_tokens_thinking: Maximum tokens for thinking phase
             num_ignore: Number of times to ignore the stop token
             temperature: Temperature parameter for sampling
@@ -264,23 +205,15 @@ class BudgetForcingClient:
         Returns:
             List of dictionaries mapping ignore index to full response
         """
-        if len(system_contents) != len(user_contents):
-            raise ValueError('Length of system_contents and user_contents should be equal.')
-        
         # Use class num_workers if not provided
         if num_workers is None:
             num_workers = self.num_workers
         
-        # Prepare image inputs
-        image_inputs = self.prepare_images(images) if images else [None] * len(user_contents)
-        
         # Prepare parameter list for parallel processing
         params = []
-        for system_content, user_content, image in zip(system_contents, user_contents, image_inputs):
+        for messages in messages_list:
             params.append({
-                "system_content": system_content,
-                "user_content": user_content,
-                "image": image,
+                "messages": copy.deepcopy(messages),
                 "max_tokens_thinking": max_tokens_thinking,
                 "num_ignore": num_ignore,
                 "temperature": temperature,

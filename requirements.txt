@@ -11,3 +11,4 @@ pyyaml
 scikit-learn
 Levenshtein
 latex2sympy2
+scipy

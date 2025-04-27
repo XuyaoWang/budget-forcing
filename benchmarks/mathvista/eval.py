@@ -91,7 +91,7 @@ class MathVistaEvaluator(BenchmarkEvaluator):
         Returns:
             The loaded dataset
         """
-        dataset = load_dataset(self.data_path)[split]
+        dataset = load_dataset(self.data_path)['testmini']
         return dataset
     
     def prepare_input_item(self, item: Dict[str, Any]) -> Tuple[str, str, Any]:
@@ -124,6 +124,7 @@ class MathVistaEvaluator(BenchmarkEvaluator):
         # Process response to get only the post-thinking part
         filtered_response = response.split("</think>")[1] if "</think>" in response else response
         filtered_response = filtered_response.split("Final answer:")[1] if "Final answer:" in filtered_response else filtered_response
+        filtered_response = filtered_response.strip()
         
         # Extract answer using the extractor model
         extraction = extract_answer(

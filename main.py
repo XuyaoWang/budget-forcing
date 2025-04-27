@@ -2,6 +2,7 @@ import os
 import asyncio
 import argparse
 import logging
+from collections import defaultdict
 
 import ray
 from transformers import AutoTokenizer
@@ -98,6 +99,8 @@ def parse_args():
                        help="Beginning of thinking token")
     parser.add_argument("--eot", type=str, default="</think>",
                        help="End of thinking token")
+    parser.add_argument("--ignore-str", type=str, default="Wait",
+                       help="String to use when ignoring the stop token")
     
     # Visualization configuration
     parser.add_argument("--visualize", action="store_true", default=True,
@@ -106,10 +109,75 @@ def parse_args():
     return parser.parse_args()
 
 
+def display_args(args):
+    """
+    Display arguments in a structured, organized way.
+    
+    This function automatically categorizes and displays all arguments,
+    making it extensible for future argument additions or removals.
+    
+    Args:
+        args: The parsed command-line arguments
+    """
+    # Convert args namespace to dictionary
+    args_dict = vars(args)
+    
+    # Define categories and their prefixes/keywords for automatic categorization
+    categories = {
+        "Server Configuration": ["model", "port", "host", "tensor", "pipeline", 
+                                "gpu", "limit", "chat", "seq", "prefix", "dtype", 
+                                "log", "fastapi", "uvicorn", "frontend", "server"],
+        "Server Operation": ["no-server", "api"],
+        "Evaluation": ["benchmark", "data", "results", "split"],
+        "Budget Forcing": ["num-ignore", "temperature", "top-p", "repetition", 
+                          "tokens", "tokenizer", "cache", "workers", "reasoning", 
+                          "bot", "eot", "ignore-str"],
+        "Visualization": ["visualize"]
+    }
+    
+    # Create a mapping of argument to category
+    arg_category_map = {}
+    for arg in args_dict:
+        arg_category = "Other"  # Default category
+        for category, keywords in categories.items():
+            if any(keyword in arg for keyword in keywords):
+                arg_category = category
+                break
+        arg_category_map[arg] = arg_category
+    
+    # Group arguments by category
+    categorized_args = defaultdict(dict)
+    for arg, value in args_dict.items():
+        category = arg_category_map[arg]
+        categorized_args[category][arg] = value
+    
+    # Display arguments by category
+    logger.info("=== CONFIGURATION PARAMETERS ===")
+    for category, args in categorized_args.items():
+        logger.info(f"\n[{category}]")
+        for arg, value in args.items():
+            # Format the value based on its type
+            if isinstance(value, bool):
+                value_str = str(value)
+            elif value is None:
+                value_str = "None"
+            elif isinstance(value, str) and len(value) > 50:
+                value_str = f"{value[:47]}..."
+            else:
+                value_str = str(value)
+            
+            # Add information if this is a required parameter
+            logger.info(f"  {arg:<25}: {value_str}")
+    logger.info("===============================")
+
+
 async def main():
     """Main entry point."""
     args = parse_args()
-    
+
+    # Display arguments in a structured format
+    display_args(args)
+ 
     # Create necessary directories
     os.makedirs(args.results_dir, exist_ok=True)
     os.makedirs(args.cache_dir, exist_ok=True)
@@ -149,11 +217,12 @@ async def main():
             api_key=args.api_key,
             model=model_name,
             tokenizer_path=args.tokenizer_path or args.model_path,
-            cache_dir=f"{args.cache_dir}/{str(model_name).replace('/', '_')}",,
+            cache_dir=args.cache_dir,
             num_workers=args.num_workers,
             reasoning=args.reasoning,
             bot=args.bot,
-            eot=args.eot
+            eot=args.eot,
+            ignore_str=args.ignore_str
         )
         
         # Create the evaluator

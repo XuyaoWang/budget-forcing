@@ -17,9 +17,9 @@ MAX_SEQ_LEN=32768
 CHAT_TEMPLATE=./scripts/qwen2_5_vl_test-scaling.jinja
 ENABLE_PREFIX_CACHING=true
 DTYPE=bfloat16
-DISABLE_LOG_STATS=false
-DISABLE_LOG_REQUESTS=false
-DISABLE_FASTAPI_DOCS=false
+DISABLE_LOG_STATS=true
+DISABLE_LOG_REQUESTS=true
+DISABLE_FASTAPI_DOCS=true
 
 
 # benchmark
@@ -36,7 +36,7 @@ REASONING=false
 
 # Set other default parameters
 RESULTS_DIR="./results"
-CACHE_DIR="./cache"
+CACHE_DIR="./cache/${MODEL_NAME}"
 NUM_WORKERS=100
 NUM_IGNORE=8
 MAX_TOKENS_THINKING=32000
@@ -63,11 +63,11 @@ python main.py \
   --num-workers ${NUM_WORKERS} \
   --num-ignore ${NUM_IGNORE} \
   --max-tokens-thinking ${MAX_TOKENS_THINKING} \
-  ${ENABLE_PREFIX_CACHING:+--enable-prefix-caching} \
-  ${DISABLE_LOG_STATS:+--disable-log-stats} \
-  ${DISABLE_LOG_REQUESTS:+--disable-log-requests} \
-  ${DISABLE_FASTAPI_DOCS:+--disable-fastapi-docs} \
-  ${REASONING:+--reasoning}
+  $([ "$ENABLE_PREFIX_CACHING" = "true" ] && echo "--enable-prefix-caching" || echo "") \
+  $([ "$DISABLE_LOG_STATS" = "true" ] && echo "--disable-log-stats" || echo "") \
+  $([ "$DISABLE_LOG_REQUESTS" = "true" ] && echo "--disable-log-requests" || echo "") \
+  $([ "$DISABLE_FASTAPI_DOCS" = "true" ] && echo "--disable-fastapi-docs" || echo "") \
+  $([ "$REASONING" = "true" ] && echo "--reasoning" || echo "")
 
 
 
