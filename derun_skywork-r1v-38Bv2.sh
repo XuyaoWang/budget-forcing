@@ -45,7 +45,7 @@ sleep 450
 
 # 第二步：在 head 节点上执行 run_mathv_R1V.py
 echo "在 Head 节点上执行 run_mathv_R1V2.py..."
-srun --nodelist=${HEAD_NODE} --ntasks=1 bash -c '
+srun --nodelist=${HEAD_NODE} --ntasks=1 --overlap bash -c '
     cd /ceph/home/yaodong01/s1-m/pcwen/s1m/ &&
     HF_ENDPOINT=https://hf-mirror.com python run_Oly_R1V2.py
 '
@@ -58,7 +58,7 @@ fi
 
 # 第三步：在 head 节点上停止 vllm 服务器
 echo "停止 vllm 服务器..."
-srun --nodelist=${HEAD_NODE} --ntasks=1 bash -c '
+srun --nodelist=${HEAD_NODE} --ntasks=1 --overlap bash -c '
     if [ -f vllm_server.pid ]; then
         kill $(cat vllm_server.pid)
         rm -f vllm_server.pid
