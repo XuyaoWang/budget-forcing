@@ -243,7 +243,7 @@ for subset in subset_list:
     # ref https://github.com/SkyworkAI/Skywork-R1V/blob/main/inference/inference_with_vllm.py#L10-33
     config = {
         "api_key" : "EMPTY",
-        "api_base" :"http://dgx-106:8000/v1/chat/completions",
+        "api_base" :"http://localhost:8000/v1/chat/completions",
         "model" :"Skywork-R1V2-38B",
         'temperature': 0.,
         'top_p': 0.95,
