@@ -47,7 +47,7 @@ sleep 300
 echo "在 Head 节点上执行 run_mathv_R1V2.py..."
 srun --nodelist=${HEAD_NODE} --ntasks=1 bash -c '
     cd /ceph/home/yaodong01/s1-m/pcwen/s1m/ &&
-    HF_ENDPOINT=https://hf-mirror.com python run_mathv_R1V2.py
+    HF_ENDPOINT=https://hf-mirror.com python run_Oly_R1V2.py
 '
 RUN_STATUS=$?
 if [ ${RUN_STATUS} -eq 0 ]; then
