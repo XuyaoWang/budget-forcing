@@ -41,7 +41,7 @@ srun --nodelist=${HEAD_NODE} --ntasks=1 bash -c '
 
 # 给 vllm 服务器足够时间启动（原脚本注释中写等待20分钟，但 sleep 300 实际为 5 分钟，可根据情况调整）
 echo "等待 vllm 服务器启动（等待 5 分钟）..."
-sleep 300
+sleep 450
 
 # 第二步：在 head 节点上执行 run_mathv_R1V.py
 echo "在 Head 节点上执行 run_mathv_R1V2.py..."
