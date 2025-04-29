@@ -5,9 +5,7 @@ set -e  # 出现错误时退出脚本
 # 第一步：启动 vllm 服务器（分配 100 CPU 模拟操作）
 # --------------------------------------------------
 echo "启动 vllm 服务器 (分配100 CPU 模拟操作) ..."
-cd ~/s1-m/pcwen/s1m
-source ~/s1-m/pcwen/myenv/bin/activate
-module load cuda12.1
+
  
 python -m vllm.entrypoints.openai.api_server \
      --model /ceph/home/yaodong01/s1-m/Models/Skywork-R1V2-38B/ \
