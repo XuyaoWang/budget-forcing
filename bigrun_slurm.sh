@@ -9,6 +9,6 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=500GB
 #SBATCH --qos=12gpu-hgx 
-#SBATCH --time=3:00:00
+#SBATCH --time=36:00:00
 
 srun bigrun.sh
