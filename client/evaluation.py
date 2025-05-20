@@ -108,7 +108,7 @@ class BenchmarkEvaluator(ABC):
         base64_data = base64.b64encode(img_bytes).decode("utf-8")
         return f"data:image/jpeg;base64,{base64_data}"
 
-    def prepare_messages(self, system_content: str, user_content: str, image: Any) -> List[Dict[str, Any]]:
+    def prepare_messages(self, system_content: str, user_content: str) -> List[Dict[str, Any]]:
         """
         Prepare messages from the tuple of (system_content, user_content, image).
         This is the default implementation that can be overridden by derived classes.
@@ -122,16 +122,16 @@ class BenchmarkEvaluator(ABC):
             List of message dictionaries ready for the API
         """
         # Process images
-        images = []
-        if image is not None:
-            if isinstance(image, list):
-                images = [self.encode_image(img) for img in image]
-            else:
-                images = [self.encode_image(image)]
+        # images = []
+        # if image is not None:
+        #     if isinstance(image, list):
+        #         images = [self.encode_image(img) for img in image]
+        #     else:
+        #         images = [self.encode_image(image)]
 
         # Construct the content array for the user message
-        content = [{"type": "image_url", "image_url": {"url": img}} for img in images]
-        content.append({"type": "text", "text": user_content})
+        # content = [{"type": "image_url", "image_url": {"url": img}} for img in images]
+        content = [{"type": "text", "text": user_content}]
 
         # Build the messages list
         messages = [{'role': 'user', 'content': content}]
@@ -178,14 +178,12 @@ class BenchmarkEvaluator(ABC):
         # Unpack results
         system_contents = []
         user_contents = []
-        images = []
 
-        for system_content, user_content, image in results:
+        for system_content, user_content in results:
             system_contents.append(system_content)
             user_contents.append(user_content)
-            images.append(image)
 
-        return system_contents, user_contents, images
+        return system_contents, user_contents
 
     def _prepare_messages_wrapper(self, param: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
@@ -200,13 +198,11 @@ class BenchmarkEvaluator(ABC):
         return self.prepare_messages(
             param['system_content'],
             param['user_content'],
-            param['image']
         )
 
     def prepare_all_messages(self,
                             system_contents: List[str],
                             user_contents: List[str],
-                            images: List[Any],
                             num_workers: int = 100) -> List[List[Dict[str, Any]]]:
         """
         Prepare all messages for the budget forcing client using parallel processing.
@@ -224,10 +220,9 @@ class BenchmarkEvaluator(ABC):
         params = [
             {
                 'system_content': system_content,
-                'user_content': user_content,
-                'image': image
+                'user_content': user_content
             }
-            for system_content, user_content, image in zip(system_contents, user_contents, images)
+            for system_content, user_content in zip(system_contents, user_contents)
         ]
 
         # Run parallel processing
@@ -350,7 +345,7 @@ class BenchmarkEvaluator(ABC):
         dataset = self.load_dataset(split)
 
         # Prepare inputs using parallel processing
-        system_contents, user_contents, images = self.prepare_inputs(
+        system_contents, user_contents= self.prepare_inputs(
             dataset, num_workers=num_workers
         )
 
@@ -358,7 +353,6 @@ class BenchmarkEvaluator(ABC):
         messages_list = self.prepare_all_messages(
             system_contents,
             user_contents,
-            images,
             num_workers=num_workers
         )
 

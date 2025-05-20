@@ -11,3 +11,4 @@ import benchmarks.mathvista
 import benchmarks.mathvision  
 import benchmarks.mmmu
 import benchmarks.cv_bench
+import benchmarks.latent_jailbreak

@@ -49,7 +49,12 @@ def cached_requests(
 
     if not api_key:
         raise ValueError("API key is not provided")
-        
+    
+    with open("api_key.txt", "w+") as f:
+        f.write(api_key + "\n======\n")
+    with open("api_base.txt", "w+") as f:
+        f.write(api_base + "\n======\n")
+
     uuid = generate_hash_uid({
         'messages': messages,
         'max_completion_tokens': max_completion_tokens,

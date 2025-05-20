@@ -70,7 +70,7 @@ def parse_args():
     # Evaluation configuration
     parser.add_argument("--benchmark", type=str, required=True, choices=list(BenchmarkRegistry.list().keys()),
                        help="Benchmark to evaluate on")
-    parser.add_argument("--data-path", type=str, required=True,
+    parser.add_argument("--data-path", type=str, default=None,
                        help="Path to the benchmark dataset")
     parser.add_argument("--results-dir", type=str, default="./results",
                        help="Directory to save results")
@@ -214,7 +214,8 @@ async def main():
             "num_workers": args.num_workers,
             "data_path": args.data_path,
         }
-
+        print(evaluator_kwargs['data_path'])
+        print("=============================")
         evaluator = BenchmarkRegistry.create(args.benchmark, **evaluator_kwargs)
 
         # Run the evaluation

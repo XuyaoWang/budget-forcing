@@ -199,14 +199,15 @@ class VLLMServer:
             self.args['served_model_name'] = [model_path]
 
 
-        if limit_mm_per_prompt:
-            limit_dict = {}
-            for item in limit_mm_per_prompt.split(','):
-                key, value = item.split('=')
-                limit_dict[key] = int(value)
-            self.args['limit_mm_per_prompt'] = limit_dict
-        else:
-            self.args['limit_mm_per_prompt'] = {}
+        # if limit_mm_per_prompt:
+        #     limit_dict = {}
+        #     for item in limit_mm_per_prompt.split(','):
+        #         key, value = item.split('=')
+        #         limit_dict[key] = int(value)
+        #     self.args['limit_mm_per_prompt'] = limit_dict
+        # else:
+        #     self.args['limit_mm_per_prompt'] = {}
+        self.args['limit_mm_per_prompt'] = {}
 
         if chat_template:
             self.args['chat_template'] = chat_template
