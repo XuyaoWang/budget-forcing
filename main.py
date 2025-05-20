@@ -6,9 +6,10 @@ from collections import defaultdict
 
 import ray
 from transformers import AutoTokenizer
-from server.vllm_server import VLLMServer
 from client.budget_forcing import BudgetForcingClient
-import benchmarks 
+# from server import ServerRegistry
+from server.vllm_server import VLLMServer
+from benchmarks import BenchmarkRegistry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,8 +20,10 @@ logger = logging.getLogger(__name__)
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Budget Forcing Evaluation Framework")
-    
+
     # Server configuration
+    parser.add_argument("--server-backend", type=str, default="vllm", choices=["vllm", "remote"],
+                       help="Server backend to use. If using remote, no local server will be started.")
     parser.add_argument("--model-path", type=str, required=True,
                        help="Path to the model to serve")
     parser.add_argument("--model-name", type=str, default=None,
@@ -57,17 +60,15 @@ def parse_args():
                        help="Disable frontend multiprocessing to prevent nested multiprocessing")
     parser.add_argument("--server-init-timeout", type=int, default=300,
                        help="Timeout in seconds for server initialization (default: 300s = 5min)")
-    
+
     # Server operation mode
-    parser.add_argument("--no-server", action="store_true",
-                       help="Don't start a server, use an existing one instead")
     parser.add_argument("--api-base", type=str, default=None,
                        help="Base URL for the API when using --no-server")
     parser.add_argument("--api-key", type=str, default="EMPTY",
                        help="API key for the API")
-    
+
     # Evaluation configuration
-    parser.add_argument("--benchmark", type=str, required=True, choices=list(benchmarks.BenchmarkRegistry.list().keys()),
+    parser.add_argument("--benchmark", type=str, required=True, choices=list(BenchmarkRegistry.list().keys()),
                        help="Benchmark to evaluate on")
     parser.add_argument("--data-path", type=str, required=True,
                        help="Path to the benchmark dataset")
@@ -75,66 +76,45 @@ def parse_args():
                        help="Directory to save results")
     parser.add_argument("--split", type=str, default="test",
                        help="Dataset split to evaluate on")
-    
-    # Budget forcing parameters
-    parser.add_argument("--num-ignore", type=int, default=0,
-                       help="Number of times to ignore the stop token")
     parser.add_argument("--temperature", type=float, default=0.3,
                        help="Temperature parameter for sampling")
     parser.add_argument("--top-p", type=float, default=0.9,
                        help="Top-p parameter for sampling")
     parser.add_argument("--repetition-penalty", type=float, default=1.05,
                        help="Repetition penalty parameter")
-    parser.add_argument("--max-tokens-thinking", type=int, default=32000,
-                       help="Maximum tokens for thinking phase")
-    parser.add_argument("--tokenizer-path", type=str, default=None,
-                       help="Path to the tokenizer (defaults to model path)")
     parser.add_argument("--cache-dir", type=str, default="./cache",
                        help="Directory to cache results")
-    parser.add_argument("--num-workers", type=int, default=10,
+    parser.add_argument("--num-workers", type=int, default=100,
                        help="Maximum number of parallel workers")
-    parser.add_argument("--reasoning", action="store_true", default=False,
-                       help="Whether the model contains both bot and eot tokens")
-    parser.add_argument("--bot", type=str, default="<think>",
-                       help="Beginning of thinking token")
-    parser.add_argument("--eot", type=str, default="</think>",
-                       help="End of thinking token")
-    parser.add_argument("--ignore-str", type=str, default="Wait",
-                       help="String to use when ignoring the stop token")
-    
-    # Visualization configuration
-    parser.add_argument("--visualize", action="store_true", default=True,
-                       help="Whether to generate visualization plots")
-    
+    parser.add_argument("--max-tokens", type=int, default=2048,
+                        help="Maximum number of tokens to generate per response")
+
     return parser.parse_args()
 
 
 def display_args(args):
     """
     Display arguments in a structured, organized way.
-    
+
     This function automatically categorizes and displays all arguments,
     making it extensible for future argument additions or removals.
-    
+
     Args:
         args: The parsed command-line arguments
     """
     # Convert args namespace to dictionary
     args_dict = vars(args)
-    
+
     # Define categories and their prefixes/keywords for automatic categorization
     categories = {
-        "Server Configuration": ["model", "port", "host", "tensor", "pipeline", 
-                                "gpu", "limit", "chat", "seq", "prefix", "dtype", 
+        "Server Configuration": ["model", "port", "host", "tensor", "pipeline",
+                                "gpu", "limit", "chat", "seq", "prefix", "dtype",
                                 "log", "fastapi", "uvicorn", "frontend", "server"],
-        "Server Operation": ["no-server", "api"],
-        "Evaluation": ["benchmark", "data", "results", "split"],
-        "Budget Forcing": ["num-ignore", "temperature", "top-p", "repetition", 
-                          "tokens", "tokenizer", "cache", "workers", "reasoning", 
-                          "bot", "eot", "ignore-str"],
-        "Visualization": ["visualize"]
+        "Server Operation": ["api-base", "api-key"],
+        "Evaluation": ["benchmark", "data", "results", "cache", "split", "num-workers"],
+        "Inference Parameters": ["temperature", "top-p", "repetition", "max-tokens"]
     }
-    
+
     # Create a mapping of argument to category
     arg_category_map = {}
     for arg in args_dict:
@@ -144,13 +124,13 @@ def display_args(args):
                 arg_category = category
                 break
         arg_category_map[arg] = arg_category
-    
+
     # Group arguments by category
     categorized_args = defaultdict(dict)
     for arg, value in args_dict.items():
         category = arg_category_map[arg]
         categorized_args[category][arg] = value
-    
+
     # Display arguments by category
     logger.info("=== CONFIGURATION PARAMETERS ===")
     for category, args in categorized_args.items():
@@ -165,7 +145,7 @@ def display_args(args):
                 value_str = f"{value[:47]}..."
             else:
                 value_str = str(value)
-            
+
             # Add information if this is a required parameter
             logger.info(f"  {arg:<25}: {value_str}")
     logger.info("===============================")
@@ -177,19 +157,19 @@ async def main():
 
     # Display arguments in a structured format
     display_args(args)
- 
+
     # Create necessary directories
     os.makedirs(args.results_dir, exist_ok=True)
     os.makedirs(args.cache_dir, exist_ok=True)
-    
+
     # Start the server if needed
     server = None
     api_base = args.api_base
     model_name = args.model_name if args.model_name else args.model_path
-    
-    if not args.no_server:
-        logger.info(f"Starting vLLM server with model {args.model_path}")
-        server = VLLMServer(
+
+    if args.server_backend != "remote":
+        logger.info(f"Starting {args.server_backend} server with model {args.model_path}")
+        server = server = VLLMServer(
             model_path=args.model_path,
             model_name=model_name,
             port=args.port,
@@ -210,72 +190,52 @@ async def main():
         if not args.api_base:
             raise ValueError("--api-base must be provided when using --no-server")
         logger.info(f"Using existing server at {args.api_base}")
-    
+
     try:
         client = BudgetForcingClient(
             api_base=api_base,
-            api_key=args.api_key,
             model=model_name,
-            tokenizer_path=args.tokenizer_path or args.model_path,
+            api_key=args.api_key,
+            # tokenizer_path=args.tokenizer_path or args.model_path,
             cache_dir=args.cache_dir,
             num_workers=args.num_workers,
-            reasoning=args.reasoning,
-            bot=args.bot,
-            eot=args.eot,
-            ignore_str=args.ignore_str
+            # bot=args.bot,
+            # eot=args.eot,
+            # ignore_str=args.ignore_str
         )
-        
+
         # Create the evaluator
         evaluator_kwargs = {
             "model_name": model_name,
-            "data_path": args.data_path,
+            "api_base": api_base,
+            "api_key": args.api_key,
+            "cache_dir": args.cache_dir,
             "results_dir": args.results_dir,
+            "num_workers": args.num_workers,
+            "data_path": args.data_path,
         }
-        
-        evaluator = benchmarks.BenchmarkRegistry.create(args.benchmark, **evaluator_kwargs)
-        
+
+        evaluator = BenchmarkRegistry.create(args.benchmark, **evaluator_kwargs)
+
         # Run the evaluation
         logger.info(f"Running evaluation on {args.benchmark} benchmark")
-        
-        # Load tokenizer for visualization only if needed
-        tokenizer = None
-        visualize = args.visualize and args.num_ignore > 0
-        
-        if visualize:
-            try:
-                tokenizer_path = args.tokenizer_path or args.model_path
-                logger.info(f"Loading tokenizer from {tokenizer_path} for visualization")
-                tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
-            except Exception as e:
-                logger.warning(f"Failed to load tokenizer for visualization: {str(e)}")
-                visualize = False
-        else:
-            if not args.visualize:
-                logger.info("Visualization is disabled")
-            elif args.num_ignore <= 0:
-                logger.info("Visualization requires num_ignore > 0, skipping")
-                
+
         results = evaluator.run_evaluation(
             budget_forcing_client=client,
-            num_ignore=args.num_ignore,
             temperature=args.temperature,
             top_p=args.top_p,
             repetition_penalty=args.repetition_penalty,
-            max_tokens_thinking=args.max_tokens_thinking,
             split=args.split,
-            tokenizer=tokenizer,
-            visualize=visualize
+            max_tokens=args.max_tokens
         )
-        
-        logger.info("Evaluation complete. Results:")
-        for ignore_idx, result in results.items():
-            logger.info(f"  num_ignore={ignore_idx}: accuracy={result.get('accuracy', 0):.4f}")
-            
+
+        logger.info("Evaluation complete. Results")
+
     finally:
         if server:
-            logger.info("Stopping vLLM server")
+            logger.info("Stopping server")
             await server.stop()
-            
+
         if ray.is_initialized():
             logger.info("Shutting down Ray")
             ray.shutdown()
