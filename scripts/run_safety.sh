@@ -1,21 +1,17 @@
 #!/bin/bash
 
-export CUDA_VISIBLE_DEVICES=0
 export VLLM_USE_V1=0
-# export CUDA_VISIBLE_DEVICES=4,5,6,7
 # Set the project root directory
 PROJECT_ROOT="."
 
-MODEL_PATH=/aifs4su/hansirui_1st/models/Qwen2.5-7B-Instruct
+MODEL_PATH=Qwen/Qwen2.5-7B-Instruct
 MODEL_NAME=Qwen2.5-7B-Instruct
 PORT=8877
 HOST=localhost
 PP_SIZE=1
-TP_SIZE=1
+TP_SIZE=1   # Tensor Parallel Size
 GPU_UTILIZATION=0.95
-LIMIT_MM_PER_PROMPT="image=10,video=10"
 MAX_SEQ_LEN=32768
-# CHAT_TEMPLATE=./scripts/qwen2_5_vl_test-scaling.jinja
 ENABLE_PREFIX_CACHING=true
 DTYPE=bfloat16
 DISABLE_LOG_STATS=true
